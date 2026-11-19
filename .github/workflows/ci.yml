@@ -1,0 +1,68 @@
+name: CI
+
+# Runs `make smoke` on every pull request (issue #2): the analog ngspice
+# smoke experiment (single typical corner) and the digital cocotb + Icarus
+# smoke, each appending an evidence record. This is the repo's verification
+# gate -- "no claim without a testbench" -- so a red run blocks review.
+#
+# Tool provisioning:
+#   ngspice + iverilog  from apt (Ubuntu 24.04: ngspice 42, the floor pinned
+#                       in sim/toolchain.json so the harness preflight passes
+#                       on exactly this version).
+#   cocotb              pinned, installed into a project-local venv (never a
+#                       host-wide install). The venv goes on PATH so both the
+#                       analog harness (stdlib-only python3) and the cocotb
+#                       makefiles use it.
+#   gf180mcu PDK        downloaded with ciel at the exact revision pinned in
+#                       sim/toolchain.json, cached across runs. The harness's
+#                       built-in search roots find it under ~/.ciel.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ngspice and Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ngspice iverilog
+
+      - name: Set up Python venv (cocotb + ciel)
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install 'cocotb==1.9.2' 'ciel==2.6.1'
+
+      - name: Cache gf180mcu PDK install
+        uses: actions/cache@v4
+        with:
+          path: ~/.ciel
+          key: gf180mcu-open_pdks-f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+
+      - name: Install gf180mcu PDK (pinned revision)
+        run: |
+          .venv/bin/ciel enable --pdk-family gf180mcu -l default \
+            f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+
+      - name: make smoke
+        run: |
+          export PATH="$PWD/.venv/bin:$PATH"
+          make smoke
+
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-evidence
+          path: |
+            sim/smoke-op/records/
+            sim/smoke-op/corners/
+            verification/smoke/evidence/
+          if-no-files-found: warn
