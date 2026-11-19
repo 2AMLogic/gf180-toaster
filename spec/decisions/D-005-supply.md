@@ -39,10 +39,13 @@ circuitry needs.
 
 Row 10 concrete: brown-out reset at ≈ 2.7 V falling with ≥ 150 mV
 hysteresis; below the threshold the hold is released and stays released
-until a valid start (behaviour owned by D-004). 2.7 V keeps the logic biased
-and releases the coil well before the 4.5 V minimum rail, while staying
-clear of POR-threshold ambiguity; the ratified value is the nominal — the
-exact threshold is a corner-grid measurement (verification below).
+until a valid start (behaviour owned by D-004). On a falling rail the
+4.5 V minimum is crossed first, so 2.7 V defines a bounded degraded band
+(BOR to 4.5 V) in which the part is outside its row 3 accuracy but keeps
+its safety semantics — the max-time ceiling's error budget spans that band
+down to BOR (D-004, row 9) — while the threshold stays clear of
+POR-threshold ambiguity; the ratified value is the nominal — the exact
+threshold is a corner-grid measurement (verification below).
 
 ## Rejected alternatives
 
@@ -52,8 +55,10 @@ exact threshold is a corner-grid measurement (verification below).
 
 ## Consistency with other groups
 
-- D-003: the 6 V device class covers the 5.5 V rail top plus clamp
-  transients.
+- D-003: the DRV release transient (coil rail plus clamp Vf), not the rail
+  top alone, is what the driver device's absolute maximum must cover; that
+  margin is verified in the corner grid (D-003), not assumed from the 6 V
+  device class.
 - D-001: oscillator and RSET-bias gating is what row 11's budget buys.
 - D-004: row 10's behaviour is specified there; the threshold number is
   specified here, once.

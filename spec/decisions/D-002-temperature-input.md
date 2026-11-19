@@ -28,16 +28,34 @@ resistor share a pin budget the 8-pin target (row 12) already fully spends.
 
 Option 2. NTC pin 4: an NTC of the 10 kΩ-at-25 °C class from VDD to pin 4,
 and a board slope resistor from pin 4 to GND. An internal window comparator
-reads the tap. Row 4 kept: compensation only shortens — 0–50 % of the
-selected time at target, 0–25 % fallback — never extends. The slope resistor
-is chosen at board build time; the chip guarantees the transfer is bounded
-and monotonic, so the same board part always yields the same compensation.
+reads the tap. The 10 kΩ-at-25 °C class is a common appliance-board
+convention carried into this spec, not a value cited to a fetched primary
+source; the datasheet-to-be names a specific part. Row 4 kept: compensation
+only shortens — 0–50 % of the selected time at target, 0–25 % fallback —
+never extends. The slope resistor is chosen at board build time by the
+selection rule below; the chip guarantees the transfer is bounded and
+monotonic, so the same board part always yields the same compensation.
 
 Fault semantics (row 8): an open NTC leaves the tap pulled to GND by the
 slope resistor; a shorted NTC pulls the tap to VDD. Both fall outside the
 comparator window (edges at ≈ 15 % and ≈ 85 % of VDD); compensation is
 disabled and the selected time stands, still bounded by the max-time limit
 (row 9, D-004).
+
+Window-vs-cavity reconciliation: a hotter cavity lowers the NTC's
+resistance and raises the tap, so the hot end of the compensation span
+pushes toward the ≈ 85 % shorted-sensor edge — in exactly the condition
+compensation exists to serve. The board therefore selects the slope
+resistor by the divider rule: with tap fraction f = R_slope / (R_NTC +
+R_slope) and the declared cavity span from its coldest compensated
+temperature to its hottest, choosing
+0.18 × R_NTC(cold end) < R_slope < 5.6 × R_NTC(hot end) keeps the tap
+inside the window (0.15 < f < 0.85) at both ends of the span. Boards pick
+inside those bounds for margin at both edges; the hot end is the binding
+edge, since heating only raises the tap. The chip guarantees the window
+edges and publishes this selection rule (repeated in the datasheet-to-be);
+the ngspice sweep verifies the declared span's hot end stays clear of the
+85 % edge.
 
 ## Rejected alternatives
 
@@ -56,16 +74,17 @@ disabled and the selected time stands, still bounded by the max-time limit
 
 - PT8A2514A datasheet,
   <https://www.diodes.com/assets/Datasheets/PT8A2514A.pdf> (accessed
-  2026-11-19): its typical application circuit conditions an external NTC
-  with a fixed resistor (NTC1 with R11 = 27 kΩ, marked as adjusted) — the
-  one-pin divider precedent for option 2.
-- 10 kΩ at 25 °C thermistor class: the industry-standard value the consumer
-  -appliance NTC families the comparison part's application circuit targets.
+  2026-11-19): its typical application circuit includes an external NTC
+  (NTC1 with R11 = 27 kΩ, marked as adjusted) in the resistor network
+  feeding the oscillator — circuit-level evidence that a board NTC carries
+  the cavity-temperature information into the timing path (D-007); it is
+  not a divider-tap precedent for option 2's window-comparator readout.
 
 ## Verification
 
 NTC behavioural model (beta-parameter) swept in ngspice across the `klt sim`
 corner grid: tap voltage vs. cavity-temperature proxy, window edges,
-compensation span and monotonicity. Fault injection (open/short) in ngspice
-for the window edges, and in cocotb for the fallback-to-selected-time
-behaviour and the span bounds.
+compensation span and monotonicity; hot-end margin to the ≈ 85 % edge for
+the declared cavity span under the slope-resistor selection rule. Fault
+injection (open/short) in ngspice for the window edges, and in cocotb for
+the fallback-to-selected-time behaviour and the span bounds.

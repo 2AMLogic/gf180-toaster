@@ -43,7 +43,12 @@ Safety invariants, one per pre-ratification gap:
   selected time stands (D-002); the run still ends by the max-time limit.
 - **Max-time limit (row 9):** any hold ends by 1.25 × the maximum settable
   time — 300 s at the target range — regardless of timing-core state,
-  including a counter that is stuck, running fast, or corrupted. Fallback:
+  including a counter that is stuck, running fast, or corrupted. The
+  ceiling runs on its own time base, independent of the timing core, and
+  that time base carries its own error budget: its worst-case behaviour is
+  specified over the full supply range from 5.5 V down to BOR (row 10), so
+  the bound holds through the degraded band where row 3's accuracy does not
+  apply (see the supply-sag reconciliation in the spec README). Fallback:
   fixed 300 s absolute ceiling. The comparison part ships an analogous
   monitor ("Relay output disable without external oscillator").
 - **Supply loss (row 10):** hold released when VDD falls below the
@@ -79,5 +84,7 @@ Safety invariants, one per pre-ratification gap:
 
 Power-on and release sequencing in cocotb (POR sweep, lever-gated start,
 cancel-to-zero-current bound); randomized runs plus counter-corruption and
-oscillator-stall injection against the row 9 ceiling in cocotb; BOR
-threshold and hysteresis sweep in ngspice via `klt sim`.
+oscillator-stall injection against the row 9 ceiling in cocotb; ceiling
+time-base error across the ngspice supply grid down to BOR (`klt sim`), so
+the 300 s bound is checked through the degraded band, not only the target
+range; BOR threshold and hysteresis sweep in ngspice via `klt sim`.

@@ -40,10 +40,13 @@ Pin list (source of truth for the bondpad map and LVS):
 | 5 | LEVER_N | I | Lever / cancel input, internal pull-up, active low (D-004) |
 | 6 | TEST | I/O | Factory test entry; strap low or leave floating in the application |
 | 7 | NC | — | Reserved, no internal connection |
-| 8 | VDD | P | Supply, 4.5–5.5 V (D-005) |
+| 8 | VDD | P | Supply, 4.5 V–5.5 V (D-005) |
 
-Supplies sit at the package ends (pins 1 and 8), the DIP-8 power-pin
-convention the comparison part also uses (GND and VCC at its corners).
+Supplies sit at the package ends (pins 1 and 8) — this spec's own choice,
+for a clean bondpad map and a symmetric pinout. No convention precedent is
+claimed: the comparison part assigns its supplies differently (VCC at pin
+4, GND at pin 8), so the pin choice here is justified by layout
+convenience, not by the incumbent's example.
 
 ## Rejected alternatives
 
