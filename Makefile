@@ -1,5 +1,10 @@
 # gf180-toaster -- one-command verification entry points.
 #
+#   make test-unit  Stdlib unit tests, by explicit file path -- never
+#                   `unittest discover`, which would also collect the cocotb
+#                   test module. Needs only python3; no ngspice, iverilog,
+#                   cocotb or PDK.
+#
 #   make smoke   Verification-harness smoke, the one command a clean checkout
 #                needs: the analog ngspice smoke experiment (single typical
 #                corner, appends an evidence record under sim/smoke-op/) and
@@ -12,10 +17,14 @@
 
 SMOKE_SUBSET_REASON ?= smoke: single typical corner by design -- harness bring-up, not block evidence (issue 2)
 
-.PHONY: help smoke smoke-analog smoke-digital
+.PHONY: help test-unit smoke smoke-analog smoke-digital
 
 help:
+	@echo "make test-unit  stdlib unit tests only (needs just python3)"
 	@echo "make smoke   analog ngspice smoke + digital cocotb smoke; appends evidence records"
+
+test-unit:
+	python3 verification/smoke/test_record_evidence.py
 
 smoke: smoke-analog smoke-digital
 
