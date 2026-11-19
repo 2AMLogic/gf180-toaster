@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Pinned toolchain for this repo's evidence, checked (not merely recorded)",
+    "before any PVT point is simulated.",
+    "  pdk_version        EXACT match against the first line of the variant",
+    "                     dir's SOURCES marker. The hash IS the device",
+    "                     models: a different revision silently yields",
+    "                     numbers no other record is comparable with.",
+    "                     Install it with:",
+    "                       pip install 'ciel==2.6.1'",
+    "                       ciel enable --pdk-family gf180mcu -l default \\",
+    "                         f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+    "  ngspice_min_major  floor, not an exact match -- newer ngspice is",
+    "                     allowed and recorded; older is refused. 42 is the",
+    "                     oldest toolchain this repo verifies against (the",
+    "                     Ubuntu 24.04 apt package CI installs); dev boxes",
+    "                     on newer ngspice pass the same pin.",
+    "  python_min         floor, as 'major.minor'. The analog harness is",
+    "                     stdlib-only; the floor is what CI's runner and",
+    "                     dev boxes are held to.",
+    "A drift is fatal by default; --allow-toolchain-drift overrides it and",
+    "stamps the drift into every record written under it."
+  ],
+  "pdk_version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+  "ngspice_min_major": 42,
+  "python_min": "3.11"
+}

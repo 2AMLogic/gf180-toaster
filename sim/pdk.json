@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Committed PDK defaults for this repo. Environment variables win over this",
+    "file, and sim/pdk.local.json (git-ignored) wins over both.",
+    "  name            PDK name; drives the GF180_PDK_PATH env var and the",
+    "                  provenance recorded in every evidence record.",
+    "  default_variant the gf180mcu flavor directory to use; override per",
+    "                  machine with $PDK.",
+    "  model_lib       the model .lib the corner sections are read from,",
+    "                  relative to the variant dir.",
+    "  design_include  global switches/params included ahead of the model",
+    "                  library.",
+    "  search_roots    extra directories that CONTAIN variant dirs, searched",
+    "                  before the built-in list (~/.volare, ~/.ciel,",
+    "                  /usr/share/pdk, ...).",
+    "The pinned install revision lives in sim/toolchain.json (pdk_version).",
+    "Fetch that exact install with:",
+    "  pip install 'ciel==2.6.1'",
+    "  ciel enable --pdk-family gf180mcu -l default \\",
+    "    f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+  ],
+  "name": "gf180",
+  "default_variant": "gf180mcuD",
+  "model_lib": "libs.tech/ngspice/sm141064.ngspice",
+  "design_include": "libs.tech/ngspice/design.ngspice",
+  "search_roots": []
+}
