@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Turn cocotb's results.xml into an append-only digital smoke evidence record.
 
-Run after `make` in verification/smoke/ succeeds (the repo-root Makefile's
-smoke-digital target does this). Writes one JSON record per invocation to
+Run after `make` in verification/smoke/ (the repo-root Makefile's smoke-digital
+target does this). Writes one JSON record per invocation to
 evidence/<record-id>.json, mirroring the analog harness's record-id
 convention (<YYYYMMDD>-<HHMMSS>-<short-sha>); existing records are never
-edited. Exits non-zero if the results file shows a failure or is missing.
+edited. A failing run still writes its error record first, then exits
+non-zero, mirroring the analog harness; a missing or empty results file
+exits non-zero without writing a record.
 
 Stdlib only; no cocotb import needed to run it.
 """
@@ -93,10 +95,6 @@ def main() -> int:
     if results["total"] == 0:
         print(f"error: {RESULTS_FILE} contains no <test> entries", file=sys.stderr)
         return 1
-    if results["failed"]:
-        print(f"error: {results['failed']} cocotb test(s) failed: {results['failures']}",
-              file=sys.stderr)
-        return 1
 
     now = _dt.datetime.now(_dt.timezone.utc)
     short_sha = git_short_sha()
@@ -114,7 +112,7 @@ def main() -> int:
         ).stdout.strip() or "unknown",
         "experiment": "verification/smoke",
         "results": results,
-        "verdict": "pass",
+        "verdict": "fail" if results["failed"] else "pass",
         "tools": {
             "python": sys.version.split()[0],
             "cocotb": cocotb_version(),
@@ -129,7 +127,11 @@ def main() -> int:
         return 1
     out.write_text(json.dumps(record, indent=2) + "\n")
     print(f"digital smoke evidence: {out.relative_to(SMOKE_DIR.parent.parent)} "
-          f"({results['passed']}/{results['total']} tests passed)")
+          f"({results['passed']}/{results['total']} tests passed, verdict: {record['verdict']})")
+    if results["failed"]:
+        print(f"error: {results['failed']} cocotb test(s) failed: {results['failures']}",
+              file=sys.stderr)
+        return 1
     return 0
 
 
