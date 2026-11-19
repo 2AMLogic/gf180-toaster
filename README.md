@@ -74,6 +74,7 @@ rtl/           Verilog sources
 sim/           analog testbenches + PVT corner results
 spec/          ratified spec + decision records
 verification/  cocotb testbenches
+Makefile       verification gates (make smoke, make test-unit)
 WORK_LOG.md    merged PRs / closed issues (maintained by Guide)
 WORK_PLAN.md   backlog snapshot from label state (maintained by Guide)
 ```
