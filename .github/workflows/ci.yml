@@ -1,6 +1,8 @@
 name: CI
 
-# Runs `make smoke` on every pull request (issue #2): the analog ngspice
+# Runs the stdlib unit tests (`make test-unit`) first -- it needs only
+# python3, so a unit regression fails before any tool is provisioned -- then
+# `make smoke` on every pull request (issue #2): the analog ngspice
 # smoke experiment (single typical corner) and the digital cocotb + Icarus
 # smoke, each appending an evidence record. This is the repo's verification
 # gate -- "no claim without a testbench" -- so a red run blocks review.
@@ -28,6 +30,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      - name: make test-unit
+        run: |
+          make test-unit
 
       - name: Install ngspice and Icarus Verilog
         run: |
