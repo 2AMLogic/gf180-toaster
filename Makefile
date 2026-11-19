@@ -2,8 +2,10 @@
 #
 #   make test-unit  Stdlib unit tests, by explicit file path -- never
 #                   `unittest discover`, which would also collect the cocotb
-#                   test module. Needs only python3; no ngspice, iverilog,
-#                   cocotb or PDK.
+#                   test module. The explicit UNIT_TESTS list is checked for
+#                   completeness first (a tracked stdlib test_*.py that the
+#                   list misses fails the target, issue #11). Needs only
+#                   python3; no ngspice, iverilog, cocotb or PDK.
 #
 #   make smoke   Verification-harness smoke, the one command a clean checkout
 #                needs: the analog ngspice smoke experiment (single typical
@@ -23,8 +25,20 @@ help:
 	@echo "make test-unit  stdlib unit tests only (needs just python3)"
 	@echo "make smoke   analog ngspice smoke + digital cocotb smoke; appends evidence records"
 
+# The one list both the runner (below) and the completeness check read --
+# a second copy would be the very drift the check exists to catch.
+# `unittest discover` stays rejected: it would import the cocotb test
+# module outside the cocotb runner (issue #9).
+UNIT_TESTS = \
+	verification/smoke/test_check_unit_list.py \
+	verification/smoke/test_record_evidence.py
+
 test-unit:
-	python3 verification/smoke/test_record_evidence.py
+	python3 verification/smoke/check_unit_list.py $(UNIT_TESTS)
+	@for t in $(UNIT_TESTS); do \
+		echo "== $$t"; \
+		python3 "$$t" || exit 1; \
+	done
 
 smoke: smoke-analog smoke-digital
 
