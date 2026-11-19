@@ -1,0 +1,28 @@
+{
+  "name": "smoke-op",
+  "description": "Verification-harness bring-up smoke: one nfet_03v3 at gate=vdd, single typical process corner. Not a Toaster block.",
+  "claim": "None -- harness self-verification, not a spec claim. Proves the PDK model include, corner .lib section, .temp and vdd_val substitution actually take effect, so later records against ratified spec lines can be trusted.",
+  "netlist": "smoke_op.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["tt"],
+  "analyses": ["op"],
+  "measure": {
+    "id_nfet_ua": "i(vd)*1e6"
+  },
+  "checks": {
+    "id_nfet_ua": {
+      "min": 1000.0,
+      "max": 5000.0,
+      "description": "gate-tied nfet_03v3 drain current (W/L=10u/1u, Vgs=Vds=vdd) stays in a plausible band at every point. Deliberately wide: it must hold across -40..125 C and +/-10% supply. Corner switching itself is proven by the harness negative control: python3 -m harness.cli selftest smoke-op --corners mos"
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "Smoke experiment: deliberately a single process corner (tt). A recorded run is therefore a subset of the mandated PVT matrix and needs --subset-reason; the Makefile's smoke target supplies it.",
+      "gf180mcu is a 3.3 V core process (no 1.8 V device exists); the supply here is the block's device voltage pending ratification in spec/."
+    ]
+  }
+}

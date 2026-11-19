@@ -87,6 +87,53 @@ saves no record, also requires complete reconciliation, all points ok and
 every limit met. A mismatch prints its problems and sample identities to
 stderr and exits 1. A recorded run still writes its error record first.
 
+## Generic vs specific to this block (gf180-toaster)
+
+This block adopts the core as shipped; the split a new reader needs:
+
+**Generic core, unmodified**: `pdk.py`, `toolchain.py`, `testbench.py`,
+`runner.py`, `evidence.py`, `report.py`, `strict_json.py`, `cli.py`.
+
+**Generic core with the one PDK-specific edit its docstring reserves**:
+`corners.py` — gf180mcu's `sm141064.ngspice` names the typical MOS corner
+section `typical`, not `tt`, so the built-in `tt` corner's `sections` tuple
+reads `("typical",)`. Corner *names* stay `tt`/`ff`/`ss`/`fs`/`sf` everywhere
+(manifests, records, CLI); only the model-library section string is
+PDK-specific.
+
+**Block-authored config and content** (this repo, not the core):
+
+- `sim/pdk.json` — PDK name/variant/model paths for gf180mcu (see `pdk.py`'s
+  docstring for the schema). `sim/pdk.local.json` (git-ignored) overrides
+  per machine; the box this repo was first verified on points
+  `search_roots` at `~/.ciel` so the ciel install wins over an older
+  `~/.volare` tree.
+- `sim/toolchain.json` — pins: the exact open_pdks revision
+  (`pdk_version`, installed via `ciel enable`), the ngspice floor
+  (42 — the oldest toolchain verified, i.e. Ubuntu 24.04's apt package),
+  and the Python floor (3.11).
+- `sim/smoke-op/` — the analog smoke experiment: one `nfet_03v3` at
+  gate=vdd, `.op`, single typical corner. `make smoke` (repo root) records
+  its evidence under `sim/smoke-op/records/` + `sim/smoke-op/corners/`;
+  the negative control is
+  `python3 -m harness.cli selftest smoke-op --corners mos` (a single-corner
+  manifest cannot show corner switching, so the selftest overrides to the
+  full MOS set).
+- `verification/smoke/` — the digital half, cocotb + Icarus: a trivial
+  `smoke_counter.v` stand-in (not the Toaster timer) and one cocotb test;
+  `make smoke` appends its JSON evidence under
+  `verification/smoke/evidence/`. Written fresh for this block — the named
+  sibling (`gf180-trng`) shipped no cocotb harness to chain to (checked
+  2026-11-19).
+- `Makefile` (repo root) — the `smoke` target running both halves; and
+  `.github/workflows/ci.yml`, which runs `make smoke` on every PR
+  (apt ngspice + iverilog, a venv with pinned cocotb, the PDK via pinned
+  `ciel`, cached).
+
+The Toaster-specific device choice inside `smoke-op` — `nfet_03v3` at a 3.3 V
+nominal supply — follows the PDK's core device family (gf180mcu has no 1.8 V
+device); the ratified spec has not yet fixed the block's rails.
+
 ## Configuration this core reads (block-authored, not shipped here)
 
 - `sim/pdk.json` — required. `{"name": ..., "default_variant": ...,

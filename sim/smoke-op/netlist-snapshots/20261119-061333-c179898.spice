@@ -1,0 +1,22 @@
+* Frozen netlist snapshot for record 20261119-061333-c179898
+* sha256     : 762463d96a5ffae3988c71b9c95ea5cdd35fa1a60cef3fc83818b858bf9fc022
+* This is a verbatim copy taken at record time. Do not edit.
+* smoke-op -- verification-harness bring-up smoke (NOT a Toaster block)
+*
+* Netlist FRAGMENT. The harness supplies the title, the PDK model includes,
+* the corner .lib sections, .temp, the .control block and .end. Parameters
+* provided by the harness: vdd_val, vdd_nom, temp_c.
+*
+* One gf180mcu 3.3 V nfet with its gate tied to the supply and a 0-V source
+* in the drain path (that source's current IS the FET drain current). Its
+* only job is to prove the harness plumbing -- model include, corner
+* section, .temp and vdd_val substitution -- actually reaches a device, so
+* that later records against ratified spec lines can be trusted. It
+* substantiates no spec line.
+
+vsup vdd 0 dc {vdd_val}
+
+* 0-V ammeter in the drain path; m_id_nfet_ua = i(vd) in microamps
+vd vdd nd dc 0
+
+XM1 nd vdd 0 0 nfet_03v3 w=10u l=1u
