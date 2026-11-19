@@ -7,7 +7,7 @@ The body below is a snapshot of GitHub label state as of the last merged docs-ma
 <!-- Maintained automatically by the Guide triage agent. Manual edits are fine but may be overwritten. -->
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-19T05:59:00Z (snapshot; compare against live labels)_
+_Generated: 2026-11-19T08:10:17Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -36,13 +36,13 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#2**: Bootstrap the verification harness
+- **#1**: Draft and ratify the target spec
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#7**: docs: draft target specification and decision records for ratification *(held)*
 
 ## Approved (Awaiting Merge)
 
@@ -54,7 +54,7 @@ _None._
 
 Issues carrying `loom:curated`.
 
-- **#2**: Bootstrap the verification harness *(curated)*
+- **#1**: Draft and ratify the target spec *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -73,7 +73,7 @@ _None._
 | Important | 1 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 1 |
 | Architect / Hermit proposals | 0 |
