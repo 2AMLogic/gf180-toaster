@@ -26,7 +26,7 @@ analog and digital smokes.
 |---|---|
 | `toolchain.json` | The klt pin (`klt_install`, `klt_required_commands`, `klt_last_verified_commit`, `klayout_package_min`) plus its append-only comment history. Every pin bump is a new comment paragraph naming the issue — never an edit to an earlier one. |
 | `toolchain_pin.py` | The ONE shared required-commands preflight every layout runner imports: each `klt_required_commands` entry must appear in `klt --help`'s subcommand list, or the runner exits 1 naming the command and the install line. |
-| `run_smoke.py` | The layout smoke runner described above. Also verifies the running klt's git commit equals `klt_last_verified_commit`, so a dev build cannot stand in for the pin. |
+| `run_smoke.py` | The layout smoke runner described above. Also verifies the running klt's git commit equals `klt_last_verified_commit`, so a dev build cannot stand in for the pin, and asserts the DRC report's `provenance.pdk.version` against `sim/toolchain.json`'s `pdk_version` — one PDK pin shared by both halves, never restated here (issue #20); klt's `ambiguous_sources` disclosure is surfaced in the record's Environment section when non-empty. |
 | `test_toolchain_pin.py` | Stdlib unit tests for the preflight (fake `klt` missing a command → exit 1 naming it). In `make test-unit`'s `UNIT_TESTS` list. |
 | `records/` | Append-only evidence records: `<YYYYMMDD>-<HHMMSS>-<short-sha>.md` in the `sim/smoke-op/records/` id style, each with its bundle directory holding the GDS streams and DRC reports. Records are only added, never edited; a superseded result gets a later record saying why. |
 
