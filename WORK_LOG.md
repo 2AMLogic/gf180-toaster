@@ -6,6 +6,11 @@ Chronological record of merged PRs and closed issues, maintained by the Guide ro
 
 _None yet._
 
+### 2026-11-23
+
+- **PR #19**: feat(layout): pin klt 0.9.2 and add the layout DRC smoke with append-only evidence
+- **Issue #16** (closed): Bring up the layout harness: pin klt in layout/toolchain.json and record a DRC smoke run
+
 ### 2026-11-22
 
 - **PR #17**: chore(loom): resync installed Loom to v0.20.8 (clears the dispatch hold)

@@ -7,7 +7,7 @@ The body below is a snapshot of GitHub label state as of the last merged docs-ma
 <!-- Maintained automatically by the Guide triage agent. Manual edits are fine but may be overwritten. -->
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-19T08:10:17Z (snapshot; compare against live labels)_
+_Generated: 2026-11-23T00:52:31Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -37,6 +37,7 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#1**: Draft and ratify the target spec
+- **#20**: Layout smoke records PDK provenance but does not enforce it (and hides klt's ambiguous_sources)
 
 ## PRs Awaiting Review
 
@@ -55,6 +56,7 @@ _None._
 Issues carrying `loom:curated`.
 
 - **#1**: Draft and ratify the target spec *(curated)*
+- **#20**: Layout smoke records PDK provenance but does not enforce it (and hides klt's ambiguous_sources) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -72,10 +74,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 1 |
+| Curated | 2 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
