@@ -8,6 +8,8 @@ _None yet._
 
 ### 2026-11-23
 
+- **PR #22**: feat(layout): enforce the pinned open_pdks revision in the DRC smoke
+- **Issue #20** (closed): Layout smoke records PDK provenance but does not enforce it (and hides klt's ambiguous_sources)
 - **PR #19**: feat(layout): pin klt 0.9.2 and add the layout DRC smoke with append-only evidence
 - **Issue #16** (closed): Bring up the layout harness: pin klt in layout/toolchain.json and record a DRC smoke run
 
