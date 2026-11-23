@@ -1,0 +1,152 @@
+{
+ "bbox_um": {
+  "x0": -3.09,
+  "x1": 15.4,
+  "y0": -0.22,
+  "y1": 0.64
+ },
+ "cell_name": "layout_smoke",
+ "dbu_um": 0.0005,
+ "device_count": 4,
+ "drc_hints": {
+  "foreign_clearance_um": 0.4,
+  "matched_group_id": "res_array:4",
+  "min_spacing_um": 0.05,
+  "notes": [
+   "spacing_um is below the recommended 0.4um margin -- may violate the target PDK's minimum same-layer spacing rule"
+  ],
+  "snapped_to_grid": false
+ },
+ "gds_path": "/home/ubuntu/GitHub/gf180-toaster/.loom/worktrees/issue-16/layout/records/20261123-002511-e088346/negative-control.gds",
+ "generator": "res_array",
+ "navigable_regions": [],
+ "pdk": {
+  "name": "gf180mcuD",
+  "variant": "gf180mcuD",
+  "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+ },
+ "ports": [
+  {
+   "direction_deg": 180,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R0_A",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 0.26,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 0,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R0_B",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 2.7800000000000002,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 180,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R1_A",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 3.3499999999999996,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 0,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R1_B",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 5.87,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 180,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R2_A",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 6.4399999999999995,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 0,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R2_B",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 8.96,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 180,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R3_A",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 9.53,
+   "y_um": 0.21
+  },
+  {
+   "direction_deg": 0,
+   "layer": {
+    "datatype": 0,
+    "layer": 34,
+    "name": null
+   },
+   "name": "R3_B",
+   "net": null,
+   "width_um": 0.42,
+   "x_um": 12.05,
+   "y_um": 0.21
+  }
+ ],
+ "provenance": {
+  "deck": null,
+  "input": null,
+  "klayout_version": "0.30.14",
+  "klt_git_commit": "046ba74652fc096bd97071fc3237f7159dd40183",
+  "klt_reinstall_spec": "klayout-tools==0.9.2",
+  "klt_version": "0.9.2",
+  "pdk": {
+   "ambiguous_sources": [
+    "search root: ~/.volare"
+   ],
+   "name": "gf180mcuD",
+   "source": "search root: ~/.ciel",
+   "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+  }
+ },
+ "schema_version": 1,
+ "warnings": []
+}
