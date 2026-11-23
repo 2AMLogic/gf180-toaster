@@ -3,9 +3,10 @@ name: CI
 # Runs the stdlib unit tests (`make test-unit`) first -- it needs only
 # python3, so a unit regression fails before any tool is provisioned -- then
 # `make smoke` on every pull request (issue #2): the analog ngspice
-# smoke experiment (single typical corner) and the digital cocotb + Icarus
-# smoke, each appending an evidence record. This is the repo's verification
-# gate -- "no claim without a testbench" -- so a red run blocks review.
+# smoke experiment (single typical corner), the digital cocotb + Icarus
+# smoke, and the layout klt DRC smoke (issue #16), each appending an
+# evidence record. This is the repo's verification gate -- "no claim
+# without a testbench" -- so a red run blocks review.
 #
 # Tool provisioning:
 #   ngspice + iverilog  from apt (Ubuntu 24.04: ngspice 42, the floor pinned
@@ -15,6 +16,10 @@ name: CI
 #                       host-wide install). The venv goes on PATH so both the
 #                       analog harness (stdlib-only python3) and the cocotb
 #                       makefiles use it.
+#   klt (klayout-tools) pinned in layout/toolchain.json, installed into the
+#                       same project-local venv. The layout smoke verifies
+#                       the running install's commit against the pin's
+#                       klt_last_verified_commit before doing anything.
 #   gf180mcu PDK        downloaded with ciel at the exact revision pinned in
 #                       sim/toolchain.json, cached across runs. The harness's
 #                       built-in search roots find it under ~/.ciel.
@@ -40,11 +45,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ngspice iverilog
 
-      - name: Set up Python venv (cocotb + ciel)
+      - name: Set up Python venv (cocotb + ciel + klt)
         run: |
           python3 -m venv .venv
           .venv/bin/pip install --upgrade pip
-          .venv/bin/pip install 'cocotb==1.9.2' 'ciel==2.6.1'
+          # klayout-tools pin lives in layout/toolchain.json (issue #16);
+          # keep this line in sync with klt_install there. The layout
+          # smoke re-checks the running install's commit against the pin's
+          # klt_last_verified_commit, so drift fails loudly, not silently.
+          .venv/bin/pip install 'cocotb==1.9.2' 'ciel==2.6.1' 'klayout-tools==0.9.2'
 
       - name: Cache gf180mcu PDK install
         uses: actions/cache@v4
@@ -71,4 +80,5 @@ jobs:
             sim/smoke-op/records/
             sim/smoke-op/corners/
             verification/smoke/evidence/
+            layout/records/
           if-no-files-found: warn
