@@ -21,7 +21,11 @@ Steps, in order:
 2. **Generate** the placeholder cell (``klt gen res_array --pdk gf180mcuD``,
    default params) into a fresh evidence bundle.
 3. **DRC** it (``klt drc --deck gf180mcu --pdk gf180mcuD``); require exit 0
-   and ``status: clean``.
+   and ``status: clean``, and hold the report's provenance to the pins:
+   ``provenance.klt_git_commit`` equals ``klt_last_verified_commit`` and
+   ``provenance.pdk.version`` equals ``sim/toolchain.json``'s
+   ``pdk_version`` -- the same PDK install the analog half pins, so a
+   host resolving any other open_pdks revision fails the run (issue #20).
 4. **Negative control**: the same generator with ``spacing_um`` squeezed to
    0.05 um (below the deck's same-layer spacing rules); require exit 3,
    ``status: violations`` and a non-zero violation count. A smoke that can
@@ -61,6 +65,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from toolchain_pin import (  # noqa: E402
     ToolchainError,
     load_pin,
+    load_pdk_version,
     repo_root,
     require_commands,
 )
@@ -186,6 +191,53 @@ def _check_klayout_floor(version_json: dict, pin: dict) -> None:
             f"bundled klayout {running} is below the pinned floor "
             f"klayout_package_min {floor} (layout/toolchain.json)."
         )
+
+
+def _check_pdk_version(provenance: dict, pdk_pin: str) -> None:
+    """Fail unless the DRC report resolved the pinned open_pdks revision.
+
+    A missing or empty ``provenance.pdk.version`` fails too: the revision
+    must be recorded *and* enforced, never silently absent -- a host or CI
+    cache resolving a different PDK install must fail the run, not merely
+    disclose the drift in the bundled JSON (issue #20).
+    """
+    reported = str((provenance.get("pdk") or {}).get("version") or "").strip()
+    if not reported:
+        raise SmokeError(
+            "DRC provenance records no provenance.pdk.version; expected the "
+            f"pinned revision {pdk_pin!r} (sim/toolchain.json pdk_version). "
+            "Refusing to pass on an unrecorded PDK revision."
+        )
+    if reported != pdk_pin:
+        raise SmokeError(
+            f"DRC provenance says open_pdks revision {reported!r}, but "
+            f"sim/toolchain.json pins pdk_version {pdk_pin!r} -- the layout "
+            "evidence would cite a PDK install no other record is "
+            "comparable with"
+        )
+
+
+def _pdk_environment_line(pdk_prov: dict) -> str:
+    """The record's Environment PDK line, klt's ambiguity disclosed.
+
+    ``klt drc`` provenance may list ``ambiguous_sources`` (other PDK
+    search roots that also matched). Listing them keeps the
+    human-readable record as honest as the bundled JSON, in the style of
+    the ``klayout_version_mismatch`` disclosure; with none, the line is
+    exactly what earlier records printed (issue #20).
+    """
+    line = (
+        f"- PDK: {pdk_prov.get('name', PDK_VARIANT)} "
+        f"({pdk_prov.get('version', '?')}, "
+        f"via {pdk_prov.get('source', '?')}"
+    )
+    sources = pdk_prov.get("ambiguous_sources") or []
+    if sources:
+        line += (
+            f"; ambiguous_sources: {', '.join(sources)} -- other PDK "
+            "sources also matched, per klt's disclosure"
+        )
+    return line + ")"
 
 
 def _sha256(path: str) -> str:
@@ -331,7 +383,7 @@ at default params -- a stand-in, not a timer/oscillator/driver cell.
 
 ## Environment
 - git: {git_sha} on {git_branch} ({dirty})
-- PDK: {pdk_name} ({pdk_version}, via {pdk_source})
+{pdk_line}
 - Python: {python}
 - runner: `layout/run_smoke.py` (klt at `{klt_path}`: {klt_version} @
   `{klt_commit}` -- the identity lines above are the durable pin, not this
@@ -357,6 +409,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         pin = load_pin(root)
         checked = require_commands(pin, klt=args.klt)
+        pdk_pin = load_pdk_version(root)
     except ToolchainError as exc:
         raise SmokeError(f"toolchain pin check failed: {exc}") from exc
 
@@ -414,6 +467,7 @@ def main(argv: list[str] | None = None) -> int:
             f"DRC provenance says klt commit {prov_commit}, pin says "
             f"{pin['klt_last_verified_commit']}"
         )
+    _check_pdk_version(provenance, pdk_pin)
 
     # -- 5. negative control ------------------------------------------
     nc_params = dict(NEGATIVE_CONTROL_PARAMS)
@@ -494,9 +548,7 @@ def main(argv: list[str] | None = None) -> int:
         git_sha=git_sha,
         git_branch=git_branch,
         dirty="dirty" if dirty else "clean",
-        pdk_name=pdk_prov.get("name", PDK_VARIANT),
-        pdk_version=pdk_prov.get("version", "?"),
-        pdk_source=pdk_prov.get("source", "?"),
+        pdk_line=_pdk_environment_line(pdk_prov),
         python=sys.version.split()[0],
         klt_path=args.klt,
     )

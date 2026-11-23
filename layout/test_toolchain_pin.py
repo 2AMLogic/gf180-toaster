@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Stdlib unittest coverage for layout/toolchain_pin.py (issue #16).
+"""Stdlib unittest coverage for layout/toolchain_pin.py (issue #16) and the
+PDK-pin assertions of layout/run_smoke.py (issue #20).
 
 Runs from anywhere (the module under test is found via its own directory):
     python3 layout/test_toolchain_pin.py
@@ -7,8 +8,8 @@ Runs from anywhere (the module under test is found via its own directory):
 
 No klt install needed: the klt executable is faked as a small Python script
 emulating ``klt --help``'s argparse subcommand block. The real
-``layout/toolchain.json`` is read for the pin values, so these tests also
-guard that document's filled state.
+``layout/toolchain.json`` and ``sim/toolchain.json`` are read for the pin
+values, so these tests also guard both documents' filled state.
 """
 
 from __future__ import annotations
@@ -22,10 +23,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import run_smoke as smoke  # noqa: E402
 import toolchain_pin as mod  # noqa: E402
 
 #: A realistic ``klt --help`` subcommand block. Rows sit at the 4-space verb
@@ -223,6 +224,124 @@ class ToolchainPinTest(unittest.TestCase):
             code = mod.main(["--check", "--klt", fake])
         self.assertEqual(code, 0)
         self.assertIn("commands ok:", stdout.getvalue())
+
+
+class LoadPdkVersionTest(unittest.TestCase):
+    """issue #20: the open_pdks pin is read from sim/toolchain.json, once."""
+
+    @staticmethod
+    def _write_sim_pin(tmp: str, doc: object) -> None:
+        os.makedirs(os.path.join(tmp, "sim"), exist_ok=True)
+        with open(
+            os.path.join(tmp, "sim", "toolchain.json"), "w", encoding="utf-8"
+        ) as handle:
+            if isinstance(doc, str):
+                handle.write(doc)
+            else:
+                json.dump(doc, handle)
+
+    def test_real_pin_is_an_open_pdks_revision(self) -> None:
+        """The real sim/toolchain.json carries a full open_pdks revision."""
+        self.assertRegex(mod.load_pdk_version(), r"^open_pdks [0-9a-f]{40}$")
+
+    def test_missing_pdk_version_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_sim_pin(tmp, {"ngspice_min_major": 42})
+            with self.assertRaises(mod.ToolchainError) as ctx:
+                mod.load_pdk_version(tmp)
+            self.assertIn("pdk_version", str(ctx.exception))
+
+    def test_empty_pdk_version_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_sim_pin(tmp, {"pdk_version": ""})
+            with self.assertRaises(mod.ToolchainError):
+                mod.load_pdk_version(tmp)
+
+    def test_invalid_json_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_sim_pin(tmp, "{not json")
+            with self.assertRaises(mod.ToolchainError):
+                mod.load_pdk_version(tmp)
+
+    def test_absent_file_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(mod.ToolchainError):
+                mod.load_pdk_version(tmp)
+
+
+class PdkProvenanceCheckTest(unittest.TestCase):
+    """issue #20: the DRC report's PDK revision is enforced, not recorded."""
+
+    PIN = "open_pdks " + "1" * 40
+
+    @staticmethod
+    def _provenance(version: object) -> dict:
+        return {"pdk": {"name": "gf180mcuD", "version": version}}
+
+    def test_matching_revision_passes(self) -> None:
+        smoke._check_pdk_version(self._provenance(self.PIN), self.PIN)
+
+    def test_absent_pdk_block_fails(self) -> None:
+        with self.assertRaises(smoke.SmokeError) as ctx:
+            smoke._check_pdk_version({}, self.PIN)
+        self.assertIn("provenance.pdk.version", str(ctx.exception))
+
+    def test_missing_version_fails_not_silently(self) -> None:
+        with self.assertRaises(smoke.SmokeError):
+            smoke._check_pdk_version({"pdk": {"name": "gf180mcuD"}}, self.PIN)
+
+    def test_empty_version_fails(self) -> None:
+        with self.assertRaises(smoke.SmokeError):
+            smoke._check_pdk_version(self._provenance(""), self.PIN)
+
+    def test_mismatch_names_both_values(self) -> None:
+        other = "open_pdks " + "2" * 40
+        with self.assertRaises(smoke.SmokeError) as ctx:
+            smoke._check_pdk_version(self._provenance(other), self.PIN)
+        message = str(ctx.exception)
+        self.assertIn(other, message)  # the revision the report claims
+        self.assertIn(self.PIN, message)  # the pin it must match
+
+
+class PdkEnvironmentLineTest(unittest.TestCase):
+    """issue #20: ambiguous_sources disclosed in the record's Environment."""
+
+    PROV = {
+        "name": "gf180mcuD",
+        "version": "open_pdks " + "f" * 40,
+        "source": "search root: ~/.ciel",
+    }
+
+    def test_no_ambiguity_line_is_unchanged(self) -> None:
+        """Empty or absent ambiguous_sources -> exactly the pre-#20 line."""
+        expected = (
+            f"- PDK: gf180mcuD (open_pdks {'f' * 40}, "
+            "via search root: ~/.ciel)"
+        )
+        self.assertEqual(smoke._pdk_environment_line(dict(self.PROV)), expected)
+        self.assertEqual(
+            smoke._pdk_environment_line({**self.PROV, "ambiguous_sources": []}),
+            expected,
+        )
+
+    def test_ambiguous_sources_listed_next_to_source(self) -> None:
+        line = smoke._pdk_environment_line(
+            {**self.PROV, "ambiguous_sources": ["search root: ~/.volare"]}
+        )
+        self.assertIn("ambiguous_sources: search root: ~/.volare", line)
+        # the chosen source still leads, inside the same parenthetical
+        self.assertLess(line.index("~/.ciel"), line.index("ambiguous_sources"))
+        self.assertTrue(line.endswith(")"))
+
+    def test_multiple_sources_all_listed(self) -> None:
+        line = smoke._pdk_environment_line(
+            {
+                **self.PROV,
+                "ambiguous_sources": ["search root: ~/.volare", "path: /opt/pdk"],
+            }
+        )
+        self.assertIn("search root: ~/.volare", line)
+        self.assertIn("path: /opt/pdk", line)
 
 
 if __name__ == "__main__":

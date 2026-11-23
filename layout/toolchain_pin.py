@@ -23,6 +23,13 @@ What it checks, and why each is a *loud* failure rather than a skipped check:
     still a bootstrap ``<!-- FILL: ... -->`` placeholder. An unfilled pin
     document means every runner's evidence would cite a pin nobody chose.
 
+``load_pdk_version()``
+    ``sim/toolchain.json`` parses and carries a non-empty ``pdk_version``
+    -- the open_pdks revision both halves share, pinned once and restated
+    nowhere. Layout runners assert DRC-report provenance against it
+    (issue #20); a missing pin is a loud failure, never "nothing to
+    compare".
+
 ``require_commands()``
     every entry of ``klt_required_commands`` appears in ``klt --help``'s
     subcommand list. A missing command means the runner's evidence would be
@@ -54,6 +61,11 @@ import sys
 
 #: Repository-relative location of the pin document this module reads.
 TOOLCHAIN_JSON = "layout/toolchain.json"
+
+#: Repository-relative location of the analog half's toolchain pin, whose
+#: ``pdk_version`` (the open_pdks revision) layout runners assert their
+#: DRC-report provenance against (issue #20).
+SIM_TOOLCHAIN_JSON = "sim/toolchain.json"
 
 #: Marker the bootstrap starter used for unfilled fields (see that file's
 #: comment block). A pin document still carrying one is not a pin yet.
@@ -121,6 +133,38 @@ def load_pin(root: str | None = None) -> dict:
             f"{TOOLCHAIN_JSON}: klt_required_commands must be a JSON array"
         )
     return pin
+
+
+def load_pdk_version(root: str | None = None) -> str:
+    """Return ``sim/toolchain.json``'s ``pdk_version`` -- the pinned
+    open_pdks revision layout evidence is asserted against (issue #20).
+
+    The analog and layout halves share one PDK install, so the revision is
+    pinned once in sim/toolchain.json; restating it in
+    layout/toolchain.json would add a drift surface. Raises
+    :class:`ToolchainError` when the file is unreadable, is not valid
+    JSON, or carries no non-empty ``pdk_version`` -- a missing pin must
+    fail loudly rather than read as "nothing to compare".
+    """
+    root = root or repo_root()
+    path = os.path.join(root, SIM_TOOLCHAIN_JSON)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            sim_pin = json.load(handle)
+    except OSError as exc:
+        raise ToolchainError(f"cannot read {SIM_TOOLCHAIN_JSON}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise ToolchainError(
+            f"{SIM_TOOLCHAIN_JSON} is not valid JSON: {exc}"
+        ) from exc
+    version = sim_pin.get("pdk_version")
+    if not isinstance(version, str) or not version.strip():
+        raise ToolchainError(
+            f"{SIM_TOOLCHAIN_JSON}: pdk_version is missing or empty -- pin "
+            "the open_pdks revision there; layout DRC provenance is "
+            "asserted against it (issue #20)"
+        )
+    return version
 
 
 def klt_subcommands(klt: str) -> set[str]:
