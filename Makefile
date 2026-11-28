@@ -41,7 +41,8 @@ help:
 UNIT_TESTS = \
 	verification/smoke/test_check_unit_list.py \
 	verification/smoke/test_record_evidence.py \
-	layout/test_toolchain_pin.py
+	layout/test_toolchain_pin.py \
+	.github/test_ci_toolchain_pins.py
 
 test-unit:
 	python3 verification/smoke/check_unit_list.py $(UNIT_TESTS)

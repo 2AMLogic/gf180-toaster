@@ -8,7 +8,10 @@ name: CI
 # evidence record. This is the repo's verification gate -- "no claim
 # without a testbench" -- so a red run blocks review.
 #
-# Tool provisioning:
+# Tool provisioning. The klt and PDK pins live in the toolchain JSON and
+# are read once by the first step after checkout (issue #30); the
+# workflow carries no second copy of either, so a pin bump is an edit to
+# the JSON, never to this file.
 #   ngspice + iverilog  from apt (Ubuntu 24.04: ngspice 42, the floor pinned
 #                       in sim/toolchain.json so the harness preflight passes
 #                       on exactly this version).
@@ -16,13 +19,14 @@ name: CI
 #                       host-wide install). The venv goes on PATH so both the
 #                       analog harness (stdlib-only python3) and the cocotb
 #                       makefiles use it.
-#   klt (klayout-tools) pinned in layout/toolchain.json, installed into the
-#                       same project-local venv. The layout smoke verifies
-#                       the running install's commit against the pin's
-#                       klt_last_verified_commit before doing anything.
-#   gf180mcu PDK        downloaded with ciel at the exact revision pinned in
-#                       sim/toolchain.json, cached across runs. The harness's
-#                       built-in search roots find it under ~/.ciel.
+#   klt (klayout-tools) klt_install from layout/toolchain.json, installed
+#                       into the same project-local venv. The layout smoke
+#                       verifies the running install's commit against the
+#                       pin's klt_last_verified_commit before doing anything.
+#   gf180mcu PDK        downloaded with ciel at the open_pdks revision in
+#                       sim/toolchain.json's pdk_version, cached across
+#                       runs. The harness's built-in search roots find it
+#                       under ~/.ciel.
 
 on:
   pull_request:
@@ -35,6 +39,20 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      # The one place CI reads a pin (issue #30): klt_install and the
+      # open_pdks revision are published as KLT_INSTALL and OPEN_PDKS_REV
+      # for the steps below. A pin that cannot be read fails here, before
+      # anything is installed; the smoke runners still verify the installed
+      # tools against the pins independently.
+      - name: Read toolchain pins
+        run: |
+          KLT_INSTALL="$(python3 -c 'import json; print(json.load(open("layout/toolchain.json"))["klt_install"])')"
+          OPEN_PDKS_REV="$(python3 -c 'import json; print(json.load(open("sim/toolchain.json"))["pdk_version"].split()[1])')"
+          {
+            echo "KLT_INSTALL=$KLT_INSTALL"
+            echo "OPEN_PDKS_REV=$OPEN_PDKS_REV"
+          } >> "$GITHUB_ENV"
 
       - name: make test-unit
         run: |
@@ -49,22 +67,19 @@ jobs:
         run: |
           python3 -m venv .venv
           .venv/bin/pip install --upgrade pip
-          # klayout-tools pin lives in layout/toolchain.json (issue #16);
-          # keep this line in sync with klt_install there. The layout
-          # smoke re-checks the running install's commit against the pin's
-          # klt_last_verified_commit, so drift fails loudly, not silently.
-          .venv/bin/pip install 'cocotb==1.9.2' 'ciel==2.6.1' 'klayout-tools==0.9.2'
+          # klt's pin was read from layout/toolchain.json by "Read toolchain pins".
+          .venv/bin/pip install 'cocotb==1.9.2' 'ciel==2.6.1' "$KLT_INSTALL"
 
       - name: Cache gf180mcu PDK install
         uses: actions/cache@v4
         with:
           path: ~/.ciel
-          key: gf180mcu-open_pdks-f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+          key: gf180mcu-open_pdks-${{ env.OPEN_PDKS_REV }}
 
       - name: Install gf180mcu PDK (pinned revision)
         run: |
           .venv/bin/ciel enable --pdk-family gf180mcu -l default \
-            f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+            "$OPEN_PDKS_REV"
 
       - name: make smoke
         run: |
