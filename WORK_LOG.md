@@ -6,6 +6,13 @@ Chronological record of merged PRs and closed issues, maintained by the Guide ro
 
 _None yet._
 
+## Entries
+
+### 2026-11-28
+
+- **PR #28**: fix: wire npm test and check scripts to the Make verification targets
+- **Issue #27** (closed): Replace always-passing npm verification scripts with the existing Make targets
+
 ### 2026-11-23
 
 - **PR #22**: feat(layout): enforce the pinned open_pdks revision in the DRC smoke
